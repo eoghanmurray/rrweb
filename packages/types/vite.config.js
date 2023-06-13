@@ -16,9 +16,6 @@ export default {
     minify: false,
 
     sourcemap: true,
-    rollupOptions: {
-      input: path.resolve(__dirname, 'src/index.ts'),
-    },
   },
   // plugins: [dts()],
 };
