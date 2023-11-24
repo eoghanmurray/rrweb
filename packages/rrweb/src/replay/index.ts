@@ -921,6 +921,7 @@ export class Replayer {
       skipChild: false,
       afterAppend,
       cache: this.cache,
+      assetManager: this.assetManager,
     });
     afterAppend(iframeEl.contentDocument! as Document, mutation.node.id);
 
@@ -1552,6 +1553,7 @@ export class Replayer {
         skipChild: true,
         hackCss: true,
         cache: this.cache,
+        assetManager: this.assetManager,
         /**
          * caveat: `afterAppend` only gets called on child nodes of target
          * we have to call it again below when this target was added to the DOM
@@ -1766,6 +1768,7 @@ export class Replayer {
                     skipChild: true,
                     hackCss: true,
                     cache: this.cache,
+                    assetManager: this.assetManager,
                   });
                   const siblingNode = target.nextSibling;
                   const parentNode = target.parentNode;
@@ -1782,6 +1785,7 @@ export class Replayer {
                   // for safe
                 }
               }
+              const targetEl = target as Element | RRElement;
               if (attributeName === 'value' && target.nodeName === 'TEXTAREA') {
                 // this may or may not have an effect on the value property (which is what is displayed)
                 // depending on whether the textarea has been modified by the user yet
@@ -1795,10 +1799,12 @@ export class Replayer {
                   textarea.appendChild(tn as TNode);
                 }
               } else {
-                (target as Element | RRElement).setAttribute(
-                  attributeName,
-                  value,
-                );
+                targetEl.setAttribute(attributeName, value);
+              }
+              if (
+                this.assetManager.isAttributeCacheable(targetEl, attributeName)
+              ) {
+                void this.assetManager.manageAttribute(targetEl, attributeName);
               }
             } catch (error) {
               this.warn(
