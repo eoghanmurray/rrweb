@@ -5,7 +5,6 @@ import {
   MaskInputFn,
   KeepIframeSrcFn,
   ICanvas,
-  elementNode,
   serializedElementNodeWithId,
 } from './types';
 import {
