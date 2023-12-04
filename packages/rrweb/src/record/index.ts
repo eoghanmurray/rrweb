@@ -100,6 +100,12 @@ function record<T = eventWithTime>(
     errorHandler,
   } = options;
 
+  // handle deprecated `inlineImages` option
+  if (inlineImages) {
+    captureAssets.objectURLs = true;
+    captureAssets.origins = true;
+  }
+
   registerErrorHandler(errorHandler);
 
   const inEmittingFrame = recordCrossOriginIframes
@@ -354,7 +360,6 @@ function record<T = eventWithTime>(
       maskTextFn,
       maskInputFn,
       recordCanvas,
-      inlineImages,
       sampling,
       slimDOMOptions,
       iframeManager,
@@ -402,7 +407,6 @@ function record<T = eventWithTime>(
       slimDOM: slimDOMOptions,
       dataURLOptions,
       recordCanvas,
-      inlineImages,
       onSerialize: (n) => {
         if (isSerializedIframe(n, mirror)) {
           iframeManager.addIframe(n as HTMLIFrameElement);
@@ -574,7 +578,6 @@ function record<T = eventWithTime>(
           sampling,
           recordDOM,
           recordCanvas,
-          inlineImages,
           userTriggeredOnInput,
           collectFonts,
           doc,
