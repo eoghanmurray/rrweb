@@ -81,7 +81,7 @@ import getInjectStyleRules from './styles/inject-style';
 import './styles/style.css';
 import canvasMutation from './canvas';
 import { deserializeArg } from './canvas/deserialize-args';
-import AssetManager from './assets';
+import AssetManager from './asset-manager';
 
 const SKIP_TIME_THRESHOLD = 10 * 1000;
 const SKIP_TIME_INTERVAL = 5 * 1000;
