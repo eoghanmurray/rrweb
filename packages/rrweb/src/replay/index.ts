@@ -1806,13 +1806,15 @@ export class Replayer {
                 if (tn) {
                   textarea.appendChild(tn as TNode);
                 }
-              } else {
-                targetEl.setAttribute(attributeName, value);
+              } else if (attributeName.startsWith('rr_captured_') && value) {
                 void this.assetManager.manageAttribute(
                   targetEl,
                   mutation.id,
-                  attributeName,
+                  attributeName.substring('rr_captured_'.length),
+                  value,
                 );
+              } else {
+                targetEl.setAttribute(attributeName, value);
               }
               void this.assetManager.manageAttribute(targetEl, attributeName);
             } catch (error) {
