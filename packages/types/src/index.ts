@@ -82,6 +82,11 @@ export type assetEvent = {
   data: assetParam;
 };
 
+export type asset = {
+  element: HTMLElement;
+  url: string;
+};
+
 export enum IncrementalSource {
   Mutation,
   MouseMove,
