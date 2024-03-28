@@ -539,7 +539,7 @@ describe('asset caching', function (this: ISuite) {
       // await ctx.page.waitForNetworkIdle({ idleTime: 100 });
 
       // TODO: remove next line after upgrading to puppeteer 19.8.0
-      await ctx.page.waitForTimeout(500);
+      //await ctx.page.waitForTimeout(500);
 
       await waitForRAF(ctx.page);
 
