@@ -50,6 +50,7 @@ export const startServer = (defaultPort: number = 3031) =>
       '.html': 'text/html',
       '.js': 'text/javascript',
       '.css': 'text/css',
+      '.pdf': 'application/pdf',
     };
     const s = http.createServer((req, res) => {
       const parsedUrl = url.parse(req.url!);
