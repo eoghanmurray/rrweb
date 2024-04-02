@@ -130,9 +130,21 @@ export default class AssetManager {
     status: 'capturing' | 'captured' | 'error' | 'refused';
   } {
     if (asset.attr === 'srcset') {
-       getSourcesFromSrcset(asset.value).forEach((url) => {
-        this.captureUrl(url);
-      });
+      if (asset.element.currentSrc) {
+        this.captureUrl(asset.element.currentSrc);
+        const recordSrcChange = () => {
+          // after e.g. a change of page dimensions
+          // a new asset will match in the srcset and trigger
+          // a new load event
+          asset.element.removeEventListener('load', recordSrcChange);
+          this.captureUrl(asset.currentSrc);
+        };
+        asset.element.addEventListener('load', recordSrcChange);
+      } else {
+        getSourcesFromSrcset(asset.value).forEach((url) => {
+          this.captureUrl(url);
+        });
+      }
     } else {
       this.captureUrl(asset.value);
     }
