@@ -212,28 +212,28 @@ function isSVGElement(el: Element): boolean {
 function getHref(doc: Document, customHref?: string) {
   let a = cachedDocument.get(doc);
 
+  if (!customHref) {
+    customHref = '';
+  }
   if (!a) {
     a = doc.createElement('a');
     cachedDocument.set(doc, a);
+  } else if (a.getAttribute('href') === customHref) {
+    /**
+     * This is needed for SPAs.
+     *
+     * Basically, the cached a link stores the URL when the element is created.
+     * SPAs will not update the page but it can change the URL, this makes the cached a link unusable.
+     *
+     * In order to prevent that, I need to reset the cache by defining the URL to any value,
+     * then I need to reset again to set the URL to '' to support relative paths like ./image.png
+     * to be correctly displayed.
+     *
+     * URLs are not updated if you set the same value, that's why I need to reset the value twice.
+     */
+    a.setAttribute('href', customHref + 'clear-current');
   }
-
-  /**
-   * This is needed for SPAs.
-   *
-   * Basically, the cached a link stores the URL when the element is created.
-   * SPAs will not update the page but it can change the URL, this makes the cached a link unusable.
-   *
-   * In order to prevent that, I need to reset the cache by defining the URL to any value,
-   * then I need to reset again to set the URL to '' to support relative paths like ./image.png
-   * to be correctly displayed.
-   *
-   * URLs are not updated if you set the same value, that's why I need to reset the value twice.
-   */
-  a.href = './clear-current';
-  a.href = '';
-
-  if (customHref) a.href = customHref;
-
+  a.setAttribute('href', customHref);
   return a.href;
 }
 
