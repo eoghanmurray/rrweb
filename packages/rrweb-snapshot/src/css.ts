@@ -436,21 +436,21 @@ export function parse(css: string, options: ParserOptions = {}): Stylesheet {
       let currentPart = '';
 
       for (let i = 0; i < input.length; i++) {
-          const char = input[i];
-          currentPart += char;
+        const char = input[i];
+        currentPart += char;
 
-          if (char === '(') {
-              nestedLevel++;
-          } else if (char === ')') {
-              nestedLevel--;
-          } else if (char === ',' && nestedLevel === 0) {
-              parts.push(currentPart.slice(0, -1).trim());
-              currentPart = '';
-          }
+        if (char === '(') {
+          nestedLevel++;
+        } else if (char === ')') {
+          nestedLevel--;
+        } else if (char === ',' && nestedLevel === 0) {
+          parts.push(currentPart.slice(0, -1).trim());
+          currentPart = '';
+        }
       }
 
       if (currentPart.trim() !== '') {
-          parts.push(currentPart.trim());
+        parts.push(currentPart.trim());
       }
 
       return parts;
@@ -458,14 +458,15 @@ export function parse(css: string, options: ParserOptions = {}): Stylesheet {
 
     /* @fix Remove all comments from selectors
      * http://ostermiller.org/findcomment.html */
-    return splitRootSelectors(trim(m[0])
-      .replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*\/+/g, '')
-      .replace(/"(?:\\"|[^"])*"|'(?:\\'|[^'])*'/g, (m) => {
-        return m.replace(/,/g, '\u200C');
-      }))
-      .map((s) => {
-        return s.replace(/\u200C/g, ',');
-      });
+    return splitRootSelectors(
+      trim(m[0])
+        .replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*\/+/g, '')
+        .replace(/"(?:\\"|[^"])*"|'(?:\\'|[^'])*'/g, (m) => {
+          return m.replace(/,/g, '\u200C');
+        }),
+    ).map((s) => {
+      return s.replace(/\u200C/g, ',');
+    });
   }
 
   /**
