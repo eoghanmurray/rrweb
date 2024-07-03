@@ -256,8 +256,8 @@ describe('record integration tests', function (this: ISuite) {
         'background-color': 'rgb(0, 0, 0)', // black !important
         color: 'rgb(255, 255, 0)', // yellow
       },
-      'a:hover, a.\\:hover { outline: red solid 1px; }', // has run adaptCssForReplay
-      'a:hover, a.\\:hover { outline: blue solid 1px; }', // has run adaptCssForReplay
+      'a:hover,\na.\\:hover { outline: red solid 1px; }', // has run adaptCssForReplay
+      'a:hover,\na.\\:hover { outline: blue solid 1px; }', // has run adaptCssForReplay
     ]);
   });
 
