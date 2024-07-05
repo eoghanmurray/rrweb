@@ -507,8 +507,9 @@ export const sampleStyleSheetRemoveEvents: eventWithTime[] = [
                     attributes: {
                       'data-jss': '',
                       'data-meta': 'OverlayDrawer',
-                      _cssText:
+                      rr_cssTexts: [
                         '.OverlayDrawer-modal-187 { }.OverlayDrawer-paper-188 { width: 100%; }@media (min-width: 48em) {\n  .OverlayDrawer-paper-188 { width: 38rem; }\n}@media (min-width: 48em) {\n}@media (min-width: 48em) {\n}',
+                      ],
                     },
                     childNodes: [
                       {

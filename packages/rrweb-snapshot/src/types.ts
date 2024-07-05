@@ -21,8 +21,7 @@ export type documentTypeNode = {
 };
 
 type cssTextKeyAttr = {
-  _cssText?: string;
-  _cssTextSplits?: string;
+  rr_cssTexts?: string[];
 };
 
 export type attributes = cssTextKeyAttr & {

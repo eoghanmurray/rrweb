@@ -1745,7 +1745,7 @@ export class Replayer {
             try {
               // When building snapshot, some link styles haven't loaded. Then they are loaded, they will be inlined as incremental mutation change of attribute. We need to replace the old elements whose styles aren't inlined.
               if (
-                attributeName === '_cssText' &&
+                (attributeName === '_cssText' || attributeName === 'rr_cssTexts') &&
                 (target.nodeName === 'LINK' || target.nodeName === 'STYLE')
               ) {
                 try {

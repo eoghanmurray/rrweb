@@ -64,8 +64,9 @@ const events: eventWithTime[] = [
                     type: 2,
                     tagName: 'style',
                     attributes: {
-                      _cssText:
-                        '.css-added-at-200 { position: fixed; top: 0px; right: 0px; left: 4rem; z-index: 15; flex-shrink: 0; height: 0.25rem; overflow: hidden; background-color: rgb(17, 171, 209); }.css-added-at-200.alt { height: 0.25rem; background-color: rgb(190, 232, 242); opacity: 0; transition: opacity 0.5s ease 0s; }.css-added-at-200.alt2 { padding-left: 4rem; }',
+                      rr_cssTexts: [
+                        '.css-added-at-200 { position: fixed; top: 0px; right: 0px; left: 4rem; z-index: 15; flex-shrink: 0; height: 0.25rem; overflow: hidden; background-color: rgb(17, 171, 209); }.css-added-at-200.alt { height: 0.25rem; background-color: rgb(190, 232, 242); opacity: 0; transition: opacity 0.5s ease 0s; }.css-added-at-200.alt2 { padding-left: 4rem; }'
+                      ],
                       'data-emotion': 'css',
                     },
                     childNodes: [

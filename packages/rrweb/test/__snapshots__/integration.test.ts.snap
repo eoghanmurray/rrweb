@@ -1134,8 +1134,7 @@ exports[`record integration tests > can record and replay style mutations 1`] = 
                     \\"tagName\\": \\"style\\",
                     \\"attributes\\": {
                       \\"id\\": \\"dual-textContent\\",
-                      \\"_cssText\\": \\"body { background-color: black; }body { color: orange !important; }\\",
-                      \\"_cssTextSplits\\": \\"33 67\\"
+                      \\"rr_cssTexts\\": [\\"body { background-color: black; }\\", \\"body { color: orange !important; }\\"],
                     },
                     \\"childNodes\\": [
                       {
@@ -1179,7 +1178,7 @@ exports[`record integration tests > can record and replay style mutations 1`] = 
                     \\"tagName\\": \\"style\\",
                     \\"attributes\\": {
                       \\"id\\": \\"single-textContent\\",
-                      \\"_cssText\\": \\"a:hover { outline: red solid 1px; }\\"
+                      \\"rr_cssTexts\\": [\\"a:hover { outline: red solid 1px; }\\"]
                     },
                     \\"childNodes\\": [
                       {
@@ -1200,7 +1199,7 @@ exports[`record integration tests > can record and replay style mutations 1`] = 
                     \\"tagName\\": \\"style\\",
                     \\"attributes\\": {
                       \\"id\\": \\"empty\\",
-                      \\"_cssText\\": \\"a:hover { outline: blue solid 1px; }\\"
+                      \\"rr_cssTexts\\": [\\"a:hover { outline: blue solid 1px; }\\"]
                     },
                     \\"childNodes\\": [],
                     \\"id\\": 23
@@ -5532,7 +5531,7 @@ exports[`record integration tests > mutations should work when blocked class is 
                     \\"type\\": 2,
                     \\"tagName\\": \\"style\\",
                     \\"attributes\\": {
-                      \\"_cssText\\": \\"#b-class, #b-class-2 { height: 33px; width: 200px; }\\"
+                      \\"rr_cssTexts\\": [\\"#b-class, #b-class-2 { height: 33px; width: 200px; }\\"]
                     },
                     \\"childNodes\\": [
                       {
@@ -8249,7 +8248,7 @@ exports[`record integration tests > should nest record iframe 1`] = `
                     \\"type\\": 2,
                     \\"tagName\\": \\"style\\",
                     \\"attributes\\": {
-                      \\"_cssText\\": \\"iframe { width: 500px; height: 500px; }\\"
+                      \\"rr_cssTexts\\": [\\"iframe { width: 500px; height: 500px; }\\"]
                     },
                     \\"childNodes\\": [
                       {
@@ -11786,7 +11785,7 @@ exports[`record integration tests > should record dynamic CSS changes 1`] = `
                     \\"attributes\\": {
                       \\"data-styled\\": \\"active\\",
                       \\"data-styled-version\\": \\"5.0.1\\",
-                      \\"_cssText\\": \\".ixzlRK { font-size: 1.5em; text-align: center; color: palevioletred; }.eOXmez { font-size: 1.5em; text-align: center; color: rebeccapurple; }.bJCmFu { padding: 4em; background: papayawhip; }\\"
+                      \\"rr_cssTexts\\": [\\".ixzlRK { font-size: 1.5em; text-align: center; color: palevioletred; }.eOXmez { font-size: 1.5em; text-align: center; color: rebeccapurple; }.bJCmFu { padding: 4em; background: papayawhip; }\\"]
                     },
                     \\"childNodes\\": [
                       {
@@ -15060,7 +15059,7 @@ exports[`record integration tests > should record shadow DOM 1`] = `
                     \\"type\\": 2,
                     \\"tagName\\": \\"style\\",
                     \\"attributes\\": {
-                      \\"_cssText\\": \\".my-element { margin: 0px 0px 1rem; }iframe { border: 0px; width: 100%; padding: 0px; }body { max-width: 400px; margin: 1rem auto; padding: 0px 1rem; font-family: \\\\\\"comic sans ms\\\\\\"; }\\"
+                      \\"rr_cssTexts\\": [\\".my-element { margin: 0px 0px 1rem; }iframe { border: 0px; width: 100%; padding: 0px; }body { max-width: 400px; margin: 1rem auto; padding: 0px 1rem; font-family: \\\\\\"comic sans ms\\\\\\"; }\\"]
                     },
                     \\"childNodes\\": [
                       {
@@ -15144,7 +15143,7 @@ exports[`record integration tests > should record shadow DOM 1`] = `
                         \\"type\\": 2,
                         \\"tagName\\": \\"style\\",
                         \\"attributes\\": {
-                          \\"_cssText\\": \\"body { margin: 0px; }p { border: 1px solid rgb(204, 204, 204); padding: 1rem; color: red; font-family: sans-serif; }\\"
+                          \\"rr_cssTexts\\": [\\"body { margin: 0px; }p { border: 1px solid rgb(204, 204, 204); padding: 1rem; color: red; font-family: sans-serif; }\\"]
                         },
                         \\"childNodes\\": [
                           {
@@ -16213,7 +16212,7 @@ exports[`record integration tests > should record style mutations with multiple 
                     \\"type\\": 2,
                     \\"tagName\\": \\"style\\",
                     \\"attributes\\": {
-                      \\"_cssText\\": \\"#one { color: rgb(255, 0, 0); }\\"
+                      \\"rr_cssTexts\\": [\\"#one { color: rgb(255, 0, 0); }\\"]
                     },
                     \\"childNodes\\": [
                       {
@@ -16336,8 +16335,7 @@ exports[`record integration tests > should record style mutations with multiple 
             \\"type\\": 2,
             \\"tagName\\": \\"style\\",
             \\"attributes\\": {
-              \\"_cssText\\": \\"#two { color: rgb(255, 0, 0); }\\",
-              \\"_cssTextSplits\\": \\"0 31\\"
+              \\"rr_cssTexts\\": [\\"\\", \\"#two { color: rgb(255, 0, 0); }\\"],
             },
             \\"childNodes\\": [],
             \\"id\\": 21

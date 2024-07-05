@@ -53,7 +53,7 @@ const tagMap: tagMap = {
 };
 function getTagName(n: elementNode): string {
   let tagName = tagMap[n.tagName] ? tagMap[n.tagName] : n.tagName;
-  if (tagName === 'link' && n.attributes._cssText) {
+  if (tagName === 'link' && (n.attributes._cssText || n.attributes.rr_cssTexts)) {
     tagName = 'style';
   }
   return tagName;
@@ -80,61 +80,51 @@ export function createCache(): BuildCache {
 }
 
 /**
- * undo findCssTextSplits
+ * undo splitCssText
  * (would move to utils.ts but uses `adaptCssForReplay`)
  */
 export function applyCssSplits(
   n: serializedElementNodeWithId,
-  cssText: string,
-  cssTextSplits: number[],
+  cssTexts: string[],
   hackCss: boolean,
   cache: BuildCache,
 ): void {
-  const lenCheckOk =
-    cssTextSplits.length &&
-    cssTextSplits[cssTextSplits.length - 1] === cssText.length;
-  for (let j = n.childNodes.length - 1; j >= 0; j--) {
-    const scn = n.childNodes[j];
-    let ix = 0;
-    if (cssTextSplits.length > j && j > 0) {
-      ix = cssTextSplits[j - 1];
+  let j = 0;
+  let scn = n.childNodes[0];
+  for (let cssText of cssTexts) {
+    while (j < n.childNodes.length && n.childNodes[j].type !== NodeType.Text) {
+      j++;
+    }
+    if (j < n.childNodes.length) {
+      scn = n.childNodes[j];
+    }
+    if (hackCss) {
+      cssText = adaptCssForReplay(cssText, cache);
     }
     if (scn.type === NodeType.Text) {
-      let remainder = '';
-      if (ix !== 0 && lenCheckOk) {
-        remainder = cssText.substring(0, ix);
-        cssText = cssText.substring(ix);
-      } else if (j > 0) {
-        continue;
-      }
-      if (hackCss) {
-        cssText = adaptCssForReplay(cssText, cache);
-      }
       // id will be assigned when these child nodes are
       // iterated over in buildNodeWithSN
-      scn.textContent = cssText;
-      cssText = remainder;
+      scn.textContent += cssText;
+    } else {
+      console.warn('Couldn\'t find node to assign following css content to:', cssText);
     }
-  }
-  if (cssText.length) {
-    // something has gone wrong
-    console.warn('Leftover css content after applyCssSplits:', cssText);
+    j++;
   }
 }
 
 /**
  * Normally a <style> element has a single textNode containing the rules.
  * During serialization, we bypass this (`styleEl.sheet`) to get the rules the
- * browser sees and serialize this to a special _cssText attribute, blanking
+ * browser sees and serialize this to a special rr_cssTexts attribute, blanking
  * out any text nodes. This function reverses that and also handles cases where
  * there were no textNode children present (dynamic css/or a <link> element) as
- * well as multiple textNodes (`cssTextSplits`), which need to be repopulated
+ * well as multiple textNodes, which need to be repopulated
  * in case they are modified by subsequent mutations.
  */
 export function buildStyleNode(
   n: serializedElementNodeWithId,
   styleEl: HTMLStyleElement, // when inlined, a <link type="stylesheet"> also gets rebuilt as a <style>
-  cssText: string,
+  cssTexts: string[],
   options: {
     doc: Document;
     hackCss: boolean;
@@ -143,14 +133,9 @@ export function buildStyleNode(
 ) {
   const { doc, hackCss, cache } = options;
   if (n.childNodes.length) {
-    let cssTextSplits: number[] = [];
-    if (n.attributes._cssTextSplits) {
-      cssTextSplits = n.attributes._cssTextSplits
-        .split(' ')
-        .map((s) => parseInt(s));
-    }
-    applyCssSplits(n, cssText, cssTextSplits, hackCss, cache);
+    applyCssSplits(n, cssTexts, hackCss, cache);
   } else {
+    let cssText = cssTexts.join('');
     if (hackCss) {
       cssText = adaptCssForReplay(cssText, cache);
     }
@@ -205,7 +190,7 @@ function buildNode(
        * They often overwrite other attributes on the element.
        * We need to parse them last so they can overwrite conflicting attributes.
        */
-      const specialAttributes: { [key: string]: string | number } = {};
+      const specialAttributes: { [key: string]: string | number | string[] } = {};
       for (const name in n.attributes) {
         if (!Object.prototype.hasOwnProperty.call(n.attributes, name)) {
           continue;
@@ -236,14 +221,13 @@ function buildNode(
         if (name.startsWith('rr_')) {
           specialAttributes[name] = value;
           continue;
-        } else if (name === '_cssTextSplits') {
-          continue;
         }
 
         if (typeof value !== 'string') {
           // pass
         } else if (tagName === 'style' && name === '_cssText') {
-          buildStyleNode(n, node as HTMLStyleElement, value, options);
+          // backwords compatible
+          buildStyleNode(n, node as HTMLStyleElement, [value], options);
           continue; // no need to set _cssText as attribute
         } else if (tagName === 'textarea' && name === 'value') {
           // create without an ID or presence in mirror
@@ -345,6 +329,8 @@ function buildNode(
           (node as HTMLElement).style.width = value.toString();
         } else if (name === 'rr_height') {
           (node as HTMLElement).style.height = value.toString();
+        } else if (name === 'rr_cssTexts') {
+          buildStyleNode(n, node as HTMLStyleElement, value as string[], options);
         } else if (
           name === 'rr_mediaCurrentTime' &&
           typeof value === 'number'

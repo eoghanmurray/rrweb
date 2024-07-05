@@ -26,7 +26,7 @@ export class StylesheetManager {
     linkEl: HTMLLinkElement,
     childSn: serializedNodeWithId,
   ) {
-    if ('_cssText' in (childSn as elementNode).attributes)
+    if ('rr_cssTexts' in (childSn as elementNode).attributes)
       this.mutationCb({
         adds: [],
         removes: [],

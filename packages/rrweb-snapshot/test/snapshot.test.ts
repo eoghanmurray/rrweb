@@ -166,7 +166,7 @@ describe('style elements', () => {
     expect(serializeNode(styleEl)).toMatchObject({
       rootId: undefined,
       attributes: {
-        _cssText: 'section {color: blue;}body {color: red;}',
+        rr_cssTexts: ['section {color: blue;}body {color: red;}'],
       },
       type: 2,
     });
@@ -180,8 +180,9 @@ describe('style elements', () => {
     expect(serializeNode(styleEl)).toMatchObject({
       rootId: undefined,
       attributes: {
-        _cssText:
+        rr_cssTexts: [
           'section.working {color: pink;}body {color: red;}section {color: blue;}',
+        ],
       },
       type: 2,
     });

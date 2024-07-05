@@ -25,7 +25,7 @@ import {
   getInputType,
   toLowerCase,
   extractFileExtension,
-  findCssTextSplits,
+  splitCssText,
 } from './utils';
 
 let _id = 1;
@@ -656,22 +656,19 @@ function serializeElementNode(
     if (cssText) {
       delete attributes.rel;
       delete attributes.href;
-      attributes._cssText = absoluteToStylesheet(cssText, stylesheet!.href!);
+      attributes.rr_cssTexts = [absoluteToStylesheet(cssText, stylesheet!.href!)];
     }
   }
   if (tagName === 'style' && (n as HTMLStyleElement).sheet) {
-    const cssText = stringifyStylesheet(
+    let cssText = stringifyStylesheet(
       (n as HTMLStyleElement).sheet as CSSStyleSheet,
     );
     if (cssText) {
-      attributes._cssText = absoluteToStylesheet(cssText, getHref(doc));
-      if (n.childNodes.length > 1) {
-        const splits = findCssTextSplits(
-          attributes._cssText,
-          n as HTMLStyleElement,
-        );
-        attributes._cssTextSplits = splits.join(' ');
-      }
+      cssText = absoluteToStylesheet(cssText, getHref(doc));
+      attributes.rr_cssTexts = splitCssText(
+        cssText,
+        n as HTMLStyleElement,
+      );
     }
   }
   // form fields
@@ -1128,8 +1125,8 @@ export function serializeNodeWithId(
     } else {
       if (
         serializedNode.type === NodeType.Element &&
-        (serializedNode as elementNode).attributes._cssText !== undefined &&
-        typeof serializedNode.attributes._cssText === 'string'
+        (serializedNode as elementNode).attributes.rr_cssTexts !== undefined &&
+        typeof serializedNode.attributes.rr_cssTexts === 'string'
       ) {
         bypassOptions.blankTextNodes = true;
       }

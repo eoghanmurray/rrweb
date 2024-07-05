@@ -1387,8 +1387,7 @@ exports[`record > captures inserted style text nodes correctly 1`] = `
                     \\"type\\": 2,
                     \\"tagName\\": \\"style\\",
                     \\"attributes\\": {
-                      \\"_cssText\\": \\"div { color: red; }section { color: blue; }\\",
-                      \\"_cssTextSplits\\": \\"19 43\\"
+                      \\"rr_cssTexts\\": [\\"div { color: red; }\\", \\"section { color: blue; }\\"]
                     },
                     \\"childNodes\\": [
                       {
@@ -1869,7 +1868,7 @@ exports[`record > captures nested stylesheet rules 1`] = `
             \\"type\\": 2,
             \\"tagName\\": \\"style\\",
             \\"attributes\\": {
-              \\"_cssText\\": \\"@media  {\\\\n  body { background: rgb(0, 0, 0); }\\\\n}\\"
+              \\"rr_cssTexts\\": [\\"@media  {\\\\n  body { background: rgb(0, 0, 0); }\\\\n}\\"]
             },
             \\"childNodes\\": [],
             \\"id\\": 9
@@ -2018,7 +2017,7 @@ exports[`record > captures style property changes 1`] = `
             \\"type\\": 2,
             \\"tagName\\": \\"style\\",
             \\"attributes\\": {
-              \\"_cssText\\": \\"body { background: rgb(0, 0, 0); }\\"
+              \\"rr_cssTexts\\": [\\"body { background: rgb(0, 0, 0); }\\"]
             },
             \\"childNodes\\": [],
             \\"id\\": 9
@@ -2147,7 +2146,7 @@ exports[`record > captures stylesheet rules 1`] = `
             \\"type\\": 2,
             \\"tagName\\": \\"style\\",
             \\"attributes\\": {
-              \\"_cssText\\": \\"body { background: rgb(0, 0, 0); }\\"
+              \\"rr_cssTexts\\": [\\"body { background: rgb(0, 0, 0); }\\"]
             },
             \\"childNodes\\": [],
             \\"id\\": 9
@@ -2302,7 +2301,7 @@ exports[`record > captures stylesheets in iframes with \`blob:\` url 1`] = `
                         \\"type\\": 2,
                         \\"tagName\\": \\"link\\",
                         \\"attributes\\": {
-                          \\"_cssText\\": \\"body { color: pink; }\\"
+                          \\"rr_cssTexts\\": [\\"body { color: pink; }\\"]
                         },
                         \\"childNodes\\": [],
                         \\"rootId\\": 10,
@@ -2376,7 +2375,7 @@ exports[`record > captures stylesheets with \`blob:\` url 1`] = `
                     \\"type\\": 2,
                     \\"tagName\\": \\"link\\",
                     \\"attributes\\": {
-                      \\"_cssText\\": \\"body { color: pink; }\\"
+                      \\"rr_cssTexts\\": [\\"body { color: pink; }\\"]
                     },
                     \\"childNodes\\": [],
                     \\"id\\": 5
@@ -3010,7 +3009,7 @@ exports[`record > loading stylesheets > captures stylesheets in iframes that are
         {
           \\"id\\": 36,
           \\"attributes\\": {
-            \\"_cssText\\": \\"body { color: pink; }\\"
+            \\"rr_cssTexts\\": [\\"body { color: pink; }\\"]
           }
         }
       ]
@@ -3190,7 +3189,7 @@ exports[`record > loading stylesheets > captures stylesheets that are still load
         {
           \\"id\\": 18,
           \\"attributes\\": {
-            \\"_cssText\\": \\"body { color: pink; }\\"
+            \\"rr_cssTexts\\": [\\"body { color: pink; }\\"]
           }
         }
       ]
@@ -3529,7 +3528,7 @@ exports[`record > without CSSGroupingRule support > captures nested stylesheet r
             \\"type\\": 2,
             \\"tagName\\": \\"style\\",
             \\"attributes\\": {
-              \\"_cssText\\": \\"@media  {\\\\n  body { background: rgb(0, 0, 0); }\\\\n}\\"
+              \\"rr_cssTexts\\": [\\"@media  {\\\\n  body { background: rgb(0, 0, 0); }\\\\n}\\"]
             },
             \\"childNodes\\": [],
             \\"id\\": 9
@@ -3741,7 +3740,7 @@ exports[`record iframes > captures stylesheet mutations in iframes 1`] = `
             \\"type\\": 2,
             \\"tagName\\": \\"style\\",
             \\"attributes\\": {
-              \\"_cssText\\": \\"body { background: rgb(0, 0, 0); }@media  {\\\\n  body { background: rgb(0, 0, 0); }\\\\n}\\"
+              \\"rr_cssTexts\\": [\\"body { background: rgb(0, 0, 0); }@media  {\\\\n  body { background: rgb(0, 0, 0); }\\\\n}\\"]
             },
             \\"childNodes\\": [],
             \\"rootId\\": 9,
