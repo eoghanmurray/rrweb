@@ -656,7 +656,9 @@ function serializeElementNode(
     if (cssText) {
       delete attributes.rel;
       delete attributes.href;
-      attributes.rr_cssTexts = [absoluteToStylesheet(cssText, stylesheet!.href!)];
+      attributes.rr_cssTexts = [
+        absoluteToStylesheet(cssText, stylesheet!.href!),
+      ];
     }
   }
   if (tagName === 'style' && (n as HTMLStyleElement).sheet) {
@@ -665,10 +667,7 @@ function serializeElementNode(
     );
     if (cssText) {
       cssText = absoluteToStylesheet(cssText, getHref(doc));
-      attributes.rr_cssTexts = splitCssText(
-        cssText,
-        n as HTMLStyleElement,
-      );
+      attributes.rr_cssTexts = splitCssText(cssText, n as HTMLStyleElement);
     }
   }
   // form fields

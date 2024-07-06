@@ -53,7 +53,10 @@ const tagMap: tagMap = {
 };
 function getTagName(n: elementNode): string {
   let tagName = tagMap[n.tagName] ? tagMap[n.tagName] : n.tagName;
-  if (tagName === 'link' && (n.attributes._cssText || n.attributes.rr_cssTexts)) {
+  if (
+    tagName === 'link' &&
+    (n.attributes._cssText || n.attributes.rr_cssTexts)
+  ) {
     tagName = 'style';
   }
   return tagName;
@@ -106,7 +109,10 @@ export function applyCssSplits(
       // iterated over in buildNodeWithSN
       scn.textContent += cssText;
     } else {
-      console.warn('Couldn\'t find node to assign following css content to:', cssText);
+      console.warn(
+        "Couldn't find node to assign following css content to:",
+        cssText,
+      );
     }
     j++;
   }
@@ -190,7 +196,8 @@ function buildNode(
        * They often overwrite other attributes on the element.
        * We need to parse them last so they can overwrite conflicting attributes.
        */
-      const specialAttributes: { [key: string]: string | number | string[] } = {};
+      const specialAttributes: { [key: string]: string | number | string[] } =
+        {};
       for (const name in n.attributes) {
         if (!Object.prototype.hasOwnProperty.call(n.attributes, name)) {
           continue;
@@ -330,7 +337,12 @@ function buildNode(
         } else if (name === 'rr_height') {
           (node as HTMLElement).style.height = value.toString();
         } else if (name === 'rr_cssTexts') {
-          buildStyleNode(n, node as HTMLStyleElement, value as string[], options);
+          buildStyleNode(
+            n,
+            node as HTMLStyleElement,
+            value as string[],
+            options,
+          );
         } else if (
           name === 'rr_mediaCurrentTime' &&
           typeof value === 'number'

@@ -126,7 +126,7 @@ describe('css splitter', () => {
 }`),
       );
       // browser .rules would usually omit the vendored versions and modifies the transition value
-      const expected = [      
+      const expected = [
         '.x { content: "try to keep a newline"; background: red; transition: 4s; }',
         '.y { transition: 5s; }',
       ];
@@ -166,12 +166,7 @@ describe('applyCssSplits css rejoiner', function () {
 
   it('applies css splits correctly', () => {
     // happy path
-    applyCssSplits(
-      sn,
-      cssTexts,
-      false,
-      mockLastUnusedArg,
-    );
+    applyCssSplits(sn, cssTexts, false, mockLastUnusedArg);
     expect((sn.childNodes[0] as textNode).textContent).toEqual(halfCssText);
     expect((sn.childNodes[1] as textNode).textContent).toEqual(
       otherHalfCssText,
@@ -197,12 +192,7 @@ describe('applyCssSplits css rejoiner', function () {
         },
       ],
     } as serializedElementNodeWithId;
-    applyCssSplits(
-      sn3,
-      cssTexts,
-      false,
-      mockLastUnusedArg,
-    );
+    applyCssSplits(sn3, cssTexts, false, mockLastUnusedArg);
     expect((sn3.childNodes[0] as textNode).textContent).toEqual(halfCssText);
     expect((sn3.childNodes[1] as textNode).textContent).toEqual(
       otherHalfCssText,
@@ -221,12 +211,7 @@ describe('applyCssSplits css rejoiner', function () {
         },
       ],
     } as serializedElementNodeWithId;
-    applyCssSplits(
-      sn1,
-      cssTexts,
-      false,
-      mockLastUnusedArg,
-    );
+    applyCssSplits(sn1, cssTexts, false, mockLastUnusedArg);
     expect((sn1.childNodes[0] as textNode).textContent).toEqual(fullCssText);
   });
 });
