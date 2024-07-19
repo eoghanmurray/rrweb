@@ -505,6 +505,7 @@ function serializeTextNode(
   const isStyle = parentTagName === 'STYLE' ? true : undefined;
   const isScript = parentTagName === 'SCRIPT' ? true : undefined;
   if (isStyle && textContent) {
+    let stringified;
     try {
       // try to read style sheet
       if (n.nextSibling || n.previousSibling) {
@@ -513,7 +514,7 @@ function serializeTextNode(
         // to _only_ include the current rule(s) added by the text node.
         // So we'll be conservative and keep textContent as-is.
       } else if ((n.parentNode as HTMLStyleElement).sheet?.cssRules) {
-        textContent = stringifyStylesheet(
+        stringified = stringifyStylesheet(
           (n.parentNode as HTMLStyleElement).sheet!,
         );
       }
@@ -523,7 +524,12 @@ function serializeTextNode(
         n,
       );
     }
-    textContent = absolutifyURLs(textContent, getHref(options.doc));
+    if (stringified) {
+      // absolutifyURLs already applied
+      textContent = stringified;
+    } else {
+      textContent = absolutifyURLs(textContent, getHref(options.doc));
+    }
   }
   if (isScript) {
     textContent = 'SCRIPT_PLACEHOLDER';
