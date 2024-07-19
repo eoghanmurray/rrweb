@@ -126,17 +126,20 @@ export function stringifyRule(rule: CSSRule, sheetHref: string | null): string {
       return absolutifyURLs(importStringified, rule.styleSheet.href);
     }
     return importStringified;
-  } else {
-    let ruleStringified = rule.cssText;
-    if (isCSSStyleRule(rule) && rule.selectorText.includes(':')) {
+  } else if (isCSSStyleRule(rule)) {
+    let { selectorText } = rule;
+    let ruleContent = rule.cssText.substring(selectorText.length);
+    if (sheetHref) {
+      ruleContent = absolutifyURLs(ruleContent, sheetHref);
+    }
+    if (selectorText.includes(':')) {
       // Safari does not escape selectors with : properly
       // see https://bugs.webkit.org/show_bug.cgi?id=184604
-      ruleStringified = fixSafariColons(ruleStringified);
+      selectorText = fixSafariColons(selectorText);
     }
-    if (sheetHref) {
-      return absolutifyURLs(ruleStringified, sheetHref);
-    }
-    return ruleStringified;
+    return selectorText + ruleContent;
+  } else {
+    return rule.cssText;
   }
 }
 
