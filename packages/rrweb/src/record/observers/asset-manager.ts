@@ -13,10 +13,7 @@ import { encode } from 'base64-arraybuffer';
 
 import { patch } from '../../utils';
 
-import type {
-  recordOptions,
-  ProcessingStyleElement,
-} from '../../types';
+import type { recordOptions, ProcessingStyleElement } from '../../types';
 import {
   getSourcesFromSrcset,
   shouldCaptureAsset,

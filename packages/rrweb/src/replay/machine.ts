@@ -60,8 +60,6 @@ export type PlayerState =
       context: PlayerContext;
     };
 
-
-
 type metaEventWithTime = metaEvent & {
   timestamp: number;
   delay?: number;
@@ -323,9 +321,9 @@ export function createPlayerService(
                 event.data.capturedAssetStatuses
               ) {
                 awaitAssetsHref = '';
-                const earlierMetas: metaEvent[] = events.filter(isMetaEvent).filter(
-                  (e) => e.timestamp <= event.timestamp,
-                );
+                const earlierMetas: metaEvent[] = events
+                  .filter(isMetaEvent)
+                  .filter((e) => e.timestamp <= event.timestamp);
                 if (earlierMetas.length) {
                   awaitAssetsHref =
                     earlierMetas[earlierMetas.length - 1].data.href;
