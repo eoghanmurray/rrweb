@@ -362,7 +362,7 @@ export default class MutationBuffer {
         },
         cssCaptured,
         onAssetDetected: (asset: asset) => {
-          this.assetManager.capture(asset);
+          this.assetManager.capture(asset, now);
         },
       });
       if (sn) {

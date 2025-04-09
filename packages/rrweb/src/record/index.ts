@@ -303,10 +303,11 @@ function record<T = eventWithTime>(
       },
     });
 
-  const wrappedAssetEmit = (p: assetParam) =>
+  const wrappedAssetEmit = (p: assetParam, snapshotTimestamp: number) =>
     wrappedEmit({
       type: EventType.Asset,
       data: p,
+      timestamp: snapshotTimestamp,
     });
 
   const wrappedAdoptedStyleSheetEmit = (a: adoptedStyleSheetParam) =>
@@ -448,7 +449,10 @@ function record<T = eventWithTime>(
         stylesheetManager.attachLinkElement(linkEl, childSn);
       },
       onAssetDetected: (asset: asset) => {
-        const assetStatus = assetManager.capture(asset);
+        const assetStatus = assetManager.capture(
+          asset,
+          true, // indicate it's a FullSnapshot
+        );
         if (Array.isArray(assetStatus)) {
           // removeme when we just capture one asset from srcset
           capturedAssetStatuses.push(...assetStatus);
@@ -469,9 +473,12 @@ function record<T = eventWithTime>(
     if (capturedAssetStatuses.length) {
       data['capturedAssetStatuses'] = capturedAssetStatuses;
     }
+    let now = nowTimestamp();
+    assetManager.lastFullSnapshotTimestamp = now;
     wrappedEmit(
       {
         type: EventType.FullSnapshot,
+        timestamp: now,
         data,
       },
       isCheckout,
