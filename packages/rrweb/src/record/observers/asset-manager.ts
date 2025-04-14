@@ -14,7 +14,6 @@ import { encode } from 'base64-arraybuffer';
 import { patch } from '@rrweb/utils';
 
 import type { recordOptions, ProcessingStyleElement } from '../../types';
-import { nowTimestamp } from '../../utils';
 import {
   getSourcesFromSrcset,
   shouldCaptureAsset,
@@ -148,22 +147,12 @@ export default class AssetManager {
         try {
           try {
             linkAppliedQuery.addEventListener('change', () =>
-              this.captureStylesheet(
-                sheetBaseHref,
-                el,
-                styleId,
-                nowTimestamp(), // the time of the change event
-              ),
+              this.captureStylesheet(sheetBaseHref, el, styleId),
             );
           } catch (e1) {
             // deprecated Safari method
             linkAppliedQuery.addListener(() =>
-              this.captureStylesheet(
-                sheetBaseHref,
-                el,
-                styleId,
-                nowTimestamp(), // the time of the change event
-              ),
+              this.captureStylesheet(sheetBaseHref, el, styleId),
             );
           }
           return {

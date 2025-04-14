@@ -34,6 +34,7 @@ import {
   inDom,
   getShadowHost,
   closestElementOfNode,
+  nowTimestamp,
 } from '../utils';
 import dom from '@rrweb/utils';
 import { isProcessingStyleElement } from './observers/asset-manager';
@@ -271,6 +272,8 @@ export default class MutationBuffer {
     if (this.frozen || this.locked) {
       return;
     }
+
+    const now = nowTimestamp();
 
     // delay any modification of the mirror until this function
     // so that the mirror for takeFullSnapshot doesn't get mutated while it's event is being processed
@@ -542,7 +545,7 @@ export default class MutationBuffer {
     this.removesSubTreeCache = new Set<Node>();
     this.movedMap = {};
 
-    this.mutationCb(payload);
+    this.mutationCb(payload, now);
   };
 
   private genTextAreaValueMutation = (textarea: HTMLTextAreaElement) => {

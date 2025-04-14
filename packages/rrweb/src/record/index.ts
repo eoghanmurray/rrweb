@@ -225,9 +225,11 @@ function record<T = eventWithTime>(
     }
     return e as unknown as T;
   };
-  wrappedEmit = (r: eventWithoutTime, isCheckout?: boolean) => {
+  wrappedEmit = (r: eventWithoutTime | eventWithTime, isCheckout?: boolean) => {
     const e = r as eventWithTime;
-    e.timestamp = nowTimestamp();
+    if (!('timestamp' in e) || e.timestamp === undefined) {
+      e.timestamp = nowTimestamp();
+    }
     if (
       mutationBuffers[0]?.isFrozen() &&
       e.type !== EventType.FullSnapshot &&
@@ -473,7 +475,7 @@ function record<T = eventWithTime>(
     if (capturedAssetStatuses.length) {
       data['capturedAssetStatuses'] = capturedAssetStatuses;
     }
-    let now = nowTimestamp();
+    const now = nowTimestamp();
     assetManager.lastFullSnapshotTimestamp = now;
     wrappedEmit(
       {
