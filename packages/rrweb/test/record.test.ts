@@ -1011,6 +1011,28 @@ describe('record', function (this: ISuite) {
       (window as any).stopRecord?.();
     });
   });
+
+  it('iframe internally becomes cross-origin', async () => {
+    await ctx.page.evaluate(async () => {
+      const { record } = (window as unknown as IWindow).rrweb;
+      const iframe = document.createElement('iframe');
+      (window as any).stopRecord = stopRecord;
+      (window as any).iframe = iframe;
+      iframe.body.innerHTML = 'last thing we see';
+      document.body.appendChild(iframe);
+    });
+    await waitForRAF(ctx.page);
+    await ctx.page.evaluate(async () => {
+      const iframe = document.querySelector('iframe');
+      // change it from within (as opposed to externally with 'src'
+      iframe.contentDocument.location.href = "https://example.com/";
+    });
+    await waitForRAF(ctx.page);
+    await ctx.page.evaluate(() => {
+      (window as any).stopRecord?.();
+    });
+  });
+  
 });
 
 describe('record iframes', function (this: ISuite) {
