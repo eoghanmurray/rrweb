@@ -75,62 +75,69 @@ export class IframeManager {
       attributes: [],
       isAttachIframe: true,
     });
-   
-    
-  
-    if (iframeEl.contentDocument && iframeEl.contentWindow && 'navigation' in iframeEl.contentWindow) {
 
-          this.mutationCb({
-            adds: [],
-            removes: [],
-            texts: [],
-            attributes: [{
-              id: this.mirror.getId(iframeEl),
-              attributes: {
-                good: '12',
-                bye: (iframeEl.contentWindow.navigation as any).toString()
-              }
-          }],          
-          });      
+    if (
+      iframeEl.contentDocument &&
+      iframeEl.contentWindow &&
+      'navigation' in iframeEl.contentWindow
+    ) {
+      this.mutationCb({
+        adds: [],
+        removes: [],
+        texts: [],
+        attributes: [
+          {
+            id: this.mirror.getId(iframeEl),
+            attributes: {
+              good: '12',
+              bye: (iframeEl.contentWindow.navigation as any).toString(),
+            },
+          },
+        ],
+      });
       // TODO import types Navigation and
       type NavigationEvent = Event & {
         destination: {
           url: string;
-        }
+        };
       };
-      const iframeNav = (iframeEl.contentWindow.navigation as any);  // TODO: import type { Navigation } from ...
+      const iframeNav = iframeEl.contentWindow.navigation as any; // TODO: import type { Navigation } from ...
       console.log('222', this);
 
-
-    if (iframeEl.contentWindow) {
-      iframeEl.contentWindow.addEventListener('beforeunload', (e: Event) => {
-//        if ('destination' in e && 'url' in (e.destination as object) &&
-        //         (e.destination.url as string) !== navigationUrl) {
-        console.log(e);
+      if (iframeEl.contentWindow) {
+        iframeEl.contentWindow.addEventListener('beforeunload', (e: Event) => {
+          //        if ('destination' in e && 'url' in (e.destination as object) &&
+          //         (e.destination.url as string) !== navigationUrl) {
+          console.log(e);
           this.mutationCb({
             adds: [],
             removes: [],
             texts: [],
-            attributes: [{
-              id: this.mirror.getId(iframeEl),
-              attributes: {
-                beforeunload: document.location.href,
-                beforeunloadw: window.location.href,
-                beforeunloadz: iframeNav.currentEntry ? iframeNav.currentEntry.url : document.location.href
-              }
-          }],          
+            attributes: [
+              {
+                id: this.mirror.getId(iframeEl),
+                attributes: {
+                  beforeunload: document.location.href,
+                  beforeunloadw: window.location.href,
+                  beforeunloadz: iframeNav.currentEntry
+                    ? iframeNav.currentEntry.url
+                    : document.location.href,
+                },
+              },
+            ],
           });
-         // navigationUrl = e.destination.url;  // avoid dupes          
-      });
-    }
+          // navigationUrl = e.destination.url;  // avoid dupes
+        });
+      }
 
-      
-      let navigationUrl = iframeNav.currentEntry ? iframeNav.currentEntry.url : document.location.href;
+      let navigationUrl = iframeNav.currentEntry
+        ? iframeNav.currentEntry.url
+        : document.location.href;
       console.log('222b', navigationUrl, iframeNav, iframeNav.addEventListener);
       iframeNav.addEventListener('navigate', (e: NavigationEvent) => {
         console.log('333');
         console.log(e.destination.url);
-/*          this.mutationCb({
+        /*          this.mutationCb({
             adds: [],
             removes: [],
             texts: [],
@@ -158,18 +165,19 @@ export class IframeManager {
         }*/
       });
 
-      
-          this.mutationCb({
-            adds: [],
-            removes: [],
-            texts: [],
-            attributes: [{
-              id: this.mirror.getId(iframeEl),
-              attributes: {
-                addlisten: '12',
-              }
-          }],          
-          });            
+      this.mutationCb({
+        adds: [],
+        removes: [],
+        texts: [],
+        attributes: [
+          {
+            id: this.mirror.getId(iframeEl),
+            attributes: {
+              addlisten: '12',
+            },
+          },
+        ],
+      });
     }
 
     // Receive messages (events) coming from cross-origin iframes that are nested in this same-origin iframe.

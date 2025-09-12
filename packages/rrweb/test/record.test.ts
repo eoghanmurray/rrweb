@@ -1018,11 +1018,12 @@ describe('record', function (this: ISuite) {
       const { record } = (window as unknown as IWindow).rrweb;
       record({
         emit: (window as unknown as IWindow).emit,
-      });      
+      });
       const iframe = document.createElement('iframe');
       (window as any).iframe = iframe;
       document.body.appendChild(iframe);
-      iframe.contentDocument.body.innerHTML = '<b>last thing we would otherwise see<b>';
+      iframe.contentDocument.body.innerHTML =
+        '<b>last thing we would otherwise see<b>';
     });
     await waitForRAF(ctx.page);
     const frames = ctx.page.frames();
@@ -1030,25 +1031,25 @@ describe('record', function (this: ISuite) {
     await ctx.page.evaluate(async () => {
       const iframes = document.querySelectorAll('iframe');
       const iframe = iframes[0];
-      iframe.setAttribute('pre-len', iframes.length);  // debug
+      iframe.setAttribute('pre-len', iframes.length); // debug
       // change it from within (as opposed to externally with 'src'
-      iframe.setAttribute('pre-href', iframe.contentDocument.location.href);  // debug
+      iframe.setAttribute('pre-href', iframe.contentDocument.location.href); // debug
       //iframe.setAttribute('__markchanging2', iframe.contentWindow.navigation.currentEntry.url);  // debug
-      iframe.contentWindow.navigation.addEventListener('navigation', e => iframe.setAttribute('_mak3', 'true'));
+      iframe.contentWindow.navigation.addEventListener('navigation', (e) =>
+        iframe.setAttribute('_mak3', 'true'),
+      );
       try {
-        iframe.contentDocument.location.href = "https://example.com";
+        iframe.contentDocument.location.href = 'https://example.com';
       } catch (e) {
-        iframe.setAttribute('__markchanging2', 'eerrr');  // debug
+        iframe.setAttribute('__markchanging2', 'eerrr'); // debug
       }
       iframe.setAttribute('post', 'done');
-      
     });
     //expect(frames[0].src).toEqual('x');
     //expect(frames[1].src).toEqual('x');
     await frames[1].waitForSelector('b', { hidden: true });
     await assertSnapshot(ctx.events, true);
   });
-  
 });
 
 describe('record iframes', function (this: ISuite) {
