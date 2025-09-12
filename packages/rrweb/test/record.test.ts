@@ -1013,24 +1013,27 @@ describe('record', function (this: ISuite) {
   });
 
   it('iframe internally becomes cross-origin', async () => {
+    ctx.page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
     await ctx.page.evaluate(async () => {
       const { record } = (window as unknown as IWindow).rrweb;
+      record({
+        emit: (window as unknown as IWindow).emit,
+      });      
       const iframe = document.createElement('iframe');
-      (window as any).stopRecord = stopRecord;
       (window as any).iframe = iframe;
-      iframe.body.innerHTML = 'last thing we see';
       document.body.appendChild(iframe);
+      iframe.contentDocument.body.innerHTML = '<b>last thing we would otherwise see<b>';
     });
     await waitForRAF(ctx.page);
+    const frames = ctx.page.frames();
+    await frames[1].waitForSelector('b');
     await ctx.page.evaluate(async () => {
       const iframe = document.querySelector('iframe');
       // change it from within (as opposed to externally with 'src'
-      iframe.contentDocument.location.href = "https://example.com/";
+      iframe.contentDocument.location.href = "https://example.com";
     });
-    await waitForRAF(ctx.page);
-    await ctx.page.evaluate(() => {
-      (window as any).stopRecord?.();
-    });
+    await frames[1].waitForSelector('b', { hidden: true });
+    await assertSnapshot(ctx.events, true);
   });
   
 });

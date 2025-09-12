@@ -75,6 +75,33 @@ export class IframeManager {
       attributes: [],
       isAttachIframe: true,
     });
+   
+      // TODO import types Navigation and
+      type NavigationEvent = Event & {
+        destination: {
+          url: string;
+        }
+      };
+      const iframeNav = (iframeEl.contentWindow.navigation as any);  // TODO: import type { Navigation } from ...
+      let navigationUrl = iframeNav.currentEntry ? iframeNav.currentEntry.url : document.location.href;
+      iframeNav.addEventListener('navigate', (e: NavigationEvent) => {
+        if ('destination' in e && 'url' in (e.destination as object) &&
+          (e.destination.url as string) !== navigationUrl) {
+          this.mutationCb({
+            adds: [],
+            removes: [],
+            texts: [],
+            attributes: [{
+              id: this.mirror.getId(iframeEl),
+              attributes: {
+                url: e.destination.url,
+              }
+          }],          
+          });
+          navigationUrl = e.destination.url;  // avoid dupes          
+        }
+      });
+    }
 
     // Receive messages (events) coming from cross-origin iframes that are nested in this same-origin iframe.
     if (this.recordCrossOriginIframes)
