@@ -1028,10 +1028,23 @@ describe('record', function (this: ISuite) {
     const frames = ctx.page.frames();
     await frames[1].waitForSelector('b');
     await ctx.page.evaluate(async () => {
-      const iframe = document.querySelector('iframe');
+      const iframes = document.querySelectorAll('iframe');
+      const iframe = iframes[0];
+      iframe.setAttribute('pre-len', iframes.length);  // debug
       // change it from within (as opposed to externally with 'src'
-      iframe.contentDocument.location.href = "https://example.com";
+      iframe.setAttribute('pre-href', iframe.contentDocument.location.href);  // debug
+      //iframe.setAttribute('__markchanging2', iframe.contentWindow.navigation.currentEntry.url);  // debug
+      iframe.contentWindow.navigation.addEventListener('navigation', e => iframe.setAttribute('_mak3', 'true'));
+      try {
+        iframe.contentDocument.location.href = "https://example.com";
+      } catch (e) {
+        iframe.setAttribute('__markchanging2', 'eerrr');  // debug
+      }
+      iframe.setAttribute('post', 'done');
+      
     });
+    //expect(frames[0].src).toEqual('x');
+    //expect(frames[1].src).toEqual('x');
     await frames[1].waitForSelector('b', { hidden: true });
     await assertSnapshot(ctx.events, true);
   });
