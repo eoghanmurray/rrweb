@@ -1,5 +1,5 @@
 import {
-  rebuild,
+  rebuildDetached,
   adaptCssForReplay,
   buildNodeWithSN,
   type BuildCache,
@@ -71,6 +71,7 @@ import type {
   styleDeclarationData,
   adoptedStyleSheetData,
   serializedElementNodeWithId,
+  serializedDocumentNodeWithId,
 } from '@rrweb/types';
 import {
   polyfill,
@@ -94,6 +95,8 @@ import { MediaManager } from './media';
 import { applyDialogToTopLevel, removeDialogFromTopLevel } from './dialog';
 
 const SKIP_TIME_INTERVAL = 5 * 1000;
+
+const ASSET_PROCESSING_BUFFER = 100;
 
 // https://github.com/rollup/rollup/issues/1267#issuecomment-296395734
 const mitt = mittProxy.default || mittProxy;
@@ -162,6 +165,13 @@ export class Replayer {
 
   private firstFullSnapshot: eventWithTime | true | null = null;
 
+  private pendingFullSnapshotRender: (() => void) | null = null;
+
+  // Scrolls that arrive while a FullSnapshot's attach is pending (detached tree with no scroll adjustment possible)
+  private pendingScrolls: scrollData[] = []; // c.f. RRElement.scrollData
+
+  private iframesToAttach: AppendedIframe[] = [];
+
   private newDocumentQueue: addedNodeMutation[] = [];
 
   private mousePos: mouseMovePos | null = null;
@@ -174,7 +184,7 @@ export class Replayer {
   // In the fast-forward mode, only the last selection data needs to be applied.
   private lastSelectionData: selectionData | null = null;
 
-  // In the fast-forward mode using VirtualDom optimization, all stylesheetRule, and styleDeclaration events on constructed StyleSheets will be delayed to get applied until the flush stage.
+  // deferred (until after rrdom or detached FullSnapshot) as they need a .sheet to mutate
   private constructedStyleMutations: (
     | styleSheetRuleData
     | styleDeclarationData
@@ -303,15 +313,7 @@ export class Replayer {
           }
         }
 
-        this.constructedStyleMutations.forEach((data) => {
-          this.applyStyleSheetMutation(data);
-        });
-        this.constructedStyleMutations = [];
-
-        this.adoptedStyleSheets.forEach((data) => {
-          this.applyAdoptedStyleSheet(data);
-        });
-        this.adoptedStyleSheets = [];
+        this.applyQueuedStyleSheets();
       }
 
       if (this.mousePos) {
@@ -423,11 +425,9 @@ export class Replayer {
           return;
         }
         this.firstFullSnapshot = firstFullsnapshot;
+        // scrolls to the snapshot's initialOffset once it attaches
         this.rebuildFullSnapshot(
           firstFullsnapshot as fullSnapshotEvent & { timestamp: number },
-        );
-        this.iframe.contentWindow?.scrollTo(
-          (firstFullsnapshot as fullSnapshotEvent).data.initialOffset,
         );
       }, 1);
     }
@@ -718,8 +718,8 @@ export class Replayer {
           }
           this.mediaManager.reset();
           this.styleMirror.reset();
+          // scrolls to the snapshot's initialOffset once it attaches
           this.rebuildFullSnapshot(event, isSync);
-          this.iframe.contentWindow?.scrollTo(event.data.initialOffset);
         };
         break;
       case EventType.IncrementalSnapshot:
@@ -830,12 +830,11 @@ export class Replayer {
       );
     }
     this.legacy_missingNodeRetryMap = {};
-    const collectedIframes: AppendedIframe[] = [];
     const collectedDialogs = new Set<HTMLDialogElement>();
     const afterAppend = (builtNode: Node, id: number) => {
       if (builtNode.nodeName === 'DIALOG')
         collectedDialogs.add(builtNode as HTMLDialogElement);
-      this.collectIframeAndAttachDocument(collectedIframes, builtNode);
+      this.collectIframeAndAttachDocument(this.iframesToAttach, builtNode);
       if (this.mediaManager.isSupportedMediaElement(builtNode)) {
         const { events } = this.service.state.context;
         this.mediaManager.addMediaElements(
@@ -866,37 +865,121 @@ export class Replayer {
       this.usingVirtualDom = false;
     }
 
+    // a still-pending earlier snapshot is superseded by this one
+    this.pendingFullSnapshotRender = null;
+    this.pendingScrolls = [];
+    this.iframesToAttach = [];
     this.mirror.reset();
-    rebuild(event.data.node, {
-      doc: this.iframe.contentDocument,
-      afterAppend,
-      cache: this.cache,
-      mirror: this.mirror,
-      UNSAFE_allowUnprotectedRebuild: this.UNSAFE_replayCanvas,
-      assetManager: this.assetManager,
-    });
-    afterAppend(this.iframe.contentDocument, event.data.node.id);
+    const fullSnapshotAssets: { url: string; ready: Promise<unknown> }[] = [];
+    this.assetManager.fullSnapshotAssets = fullSnapshotAssets;
+    const { attach } = rebuildDetached(
+      event.data.node as serializedDocumentNodeWithId,
+      {
+        doc: this.iframe.contentDocument,
+        afterAppend,
+        cache: this.cache,
+        mirror: this.mirror,
+        UNSAFE_allowUnprotectedRebuild: this.UNSAFE_replayCanvas,
+        assetManager: this.assetManager,
+      },
+    );
+    this.assetManager.fullSnapshotAssets = null;
 
-    for (const { mutationInQueue, builtNode } of collectedIframes) {
-      this.attachDocumentToIframe(mutationInQueue, builtNode);
-      this.newDocumentQueue = this.newDocumentQueue.filter(
-        (m) => m !== mutationInQueue,
+    const completeRender = () => {
+      if (!this.iframe.contentDocument) {
+        return; // replayer was destroyed while the attach was pending
+      }
+      attach();
+      afterAppend(this.iframe.contentDocument, event.data.node.id);
+
+      for (const { mutationInQueue, builtNode } of this.iframesToAttach) {
+        this.attachDocumentToIframe(mutationInQueue, builtNode);
+        this.newDocumentQueue = this.newDocumentQueue.filter(
+          (m) => m !== mutationInQueue,
+        );
+      }
+      this.iframesToAttach = [];
+      const { documentElement, head } = this.iframe.contentDocument;
+      this.insertStyleRules(documentElement, head);
+      this.applyQueuedStyleSheets(); // sequence: after resetDocument and any nested iframes have been attached
+      collectedDialogs.forEach((d) => applyDialogToTopLevel(d));
+      if (!this.service.state.matches('playing')) {
+        this.iframe.contentDocument
+          .getElementsByTagName('html')[0]
+          .classList.add('rrweb-paused');
+      }
+      this.iframe.contentWindow?.scrollTo(event.data.initialOffset);
+      for (const scroll of this.pendingScrolls) {
+        this.applyScroll(scroll, true);
+      }
+      this.pendingScrolls = [];
+      this.emitter.emit(ReplayerEvents.FullsnapshotRebuilded, event);
+      if (!isSync) {
+        this.waitForStylesheetLoad();
+      }
+      if (this.config.UNSAFE_replayCanvas) {
+        void this.preloadAllImages();
+      }
+    };
+
+    const { maxAssetDelay } = event.data;
+    if (
+      (this.config.liveMode || !isSync) &&
+      maxAssetDelay &&
+      fullSnapshotAssets.length
+    ) {
+      const pendingFullSnapshotAssets = new Set(fullSnapshotAssets);
+
+      // hold the previous frame on screen until fullsnapshot assets for this
+      // snapshot have arrived (e.g. inline styles), avoiding FOUC
+      const doRender = () => {
+        if (this.pendingFullSnapshotRender !== doRender) {
+          return; // already rendered, or superseded by a newer snapshot
+        }
+        this.pendingFullSnapshotRender = null;
+        clearTimeout(failTimeout);
+        completeRender();
+      };
+
+      let lastAssetArrival = Date.now();
+      const failRemainingAssets = () => {
+        if (this.pendingFullSnapshotRender !== doRender) {
+          return; // already attached, or superseded by a newer snapshot
+        }
+        const quietFor = Date.now() - lastAssetArrival;
+        if (quietFor < ASSET_PROCESSING_BUFFER) {
+          // extend as we have received an asset recently
+          // Assets could trickle in like this if several hit the requestIdleCallback timeout at the same time, and the stylesheet processing is serialized
+          failTimeout = setTimeout(
+            failRemainingAssets,
+            ASSET_PROCESSING_BUFFER - quietFor,
+          );
+          return;
+        }
+        for (const { url } of pendingFullSnapshotAssets) {
+          // when we fail a <link> asset, an @import fallback will kick in here
+          this.assetManager.failAsset(url);
+        }
+        pendingFullSnapshotAssets.clear();
+        doRender();
+      };
+      let failTimeout = setTimeout(
+        failRemainingAssets,
+        maxAssetDelay + ASSET_PROCESSING_BUFFER,
       );
-    }
-    const { documentElement, head } = this.iframe.contentDocument;
-    this.insertStyleRules(documentElement, head);
-    collectedDialogs.forEach((d) => applyDialogToTopLevel(d));
-    if (!this.service.state.matches('playing')) {
-      this.iframe.contentDocument
-        .getElementsByTagName('html')[0]
-        .classList.add('rrweb-paused');
-    }
-    this.emitter.emit(ReplayerEvents.FullsnapshotRebuilded, event);
-    if (!isSync) {
-      this.waitForStylesheetLoad();
-    }
-    if (this.config.UNSAFE_replayCanvas) {
-      void this.preloadAllImages();
+      this.pendingFullSnapshotRender = doRender;
+      for (const pendingAsset of pendingFullSnapshotAssets) {
+        void pendingAsset.ready.then(() => {
+          lastAssetArrival = Date.now();
+          pendingFullSnapshotAssets.delete(pendingAsset);
+          if (pendingFullSnapshotAssets.size === 0) {
+            doRender();
+          }
+        });
+      }
+    } else {
+      // e.g. scrub fast-forward jump - render synchronously
+      completeRender();
     }
   }
 
@@ -945,6 +1028,22 @@ export class Replayer {
     mutation: addedNodeMutation,
     iframeEl: HTMLIFrameElement | RRIFrameElement,
   ) {
+    if (!this.usingVirtualDom && !iframeEl.contentDocument) {
+      // an iframe only gains a contentDocument when added to an attached document
+      if (this.pendingFullSnapshotRender) {
+        this.iframesToAttach.push({
+          mutationInQueue: mutation,
+          builtNode: iframeEl,
+        });
+      } else {
+        this.warn(
+          'Missing contentDocument on iframe mutation',
+          mutation,
+          iframeEl,
+        );
+      }
+      return;
+    }
     const mirror: RRDOMMirror | Mirror = this.usingVirtualDom
       ? this.virtualDom.mirror
       : this.mirror;
@@ -1081,14 +1180,6 @@ export class Replayer {
     fullSnapshot: fullSnapshotEvent & { timestamp: number },
   ): Promise<void[]> {
     const promises: Promise<void>[] = [];
-    if (fullSnapshot.data.capturedAssetStatuses) {
-      fullSnapshot.data.capturedAssetStatuses.forEach((status) => {
-        if (this.assetManager.expectedAssets === null) {
-          this.assetManager.expectedAssets = new Set();
-        }
-        this.assetManager.expectedAssets.add(status.url);
-      });
-    }
     for (const event of this.service.state.context.events) {
       if (event.timestamp < fullSnapshot.timestamp) continue;
       if (
@@ -1325,6 +1416,10 @@ export class Replayer {
           target.scrollData = d;
           break;
         }
+        if (this.pendingFullSnapshotRender) {
+          this.pendingScrolls.push(d);
+          break;
+        }
         // Use isSync rather than this.usingVirtualDom because not every fast-forward process uses virtual dom optimization.
         this.applyScroll(d, isSync);
         break;
@@ -1382,7 +1477,12 @@ export class Replayer {
             (
               this.virtualDom.mirror.getNode(d.id) as RRStyleElement | null
             )?.rules.push(d);
-        } else this.applyStyleSheetMutation(d);
+        } else if (this.pendingFullSnapshotRender) {
+          // a detached <style> has no `.sheet` yet
+          this.constructedStyleMutations.push(d);
+        } else {
+          this.applyStyleSheetMutation(d);
+        }
         break;
       }
       case IncrementalSource.CanvasMutation: {
@@ -1440,7 +1540,8 @@ export class Replayer {
         break;
       }
       case IncrementalSource.AdoptedStyleSheet: {
-        if (this.usingVirtualDom) this.adoptedStyleSheets.push(d);
+        if (this.usingVirtualDom || this.pendingFullSnapshotRender)
+          this.adoptedStyleSheets.push(d);
         else this.applyAdoptedStyleSheet(d);
         break;
       }
@@ -1455,7 +1556,17 @@ export class Replayer {
    */
   private applyMutation(d: mutationData, isSync: boolean) {
     // Only apply virtual dom optimization if the fast-forward process has node mutation. Because the cost of creating a virtual dom tree and executing the diff algorithm is usually higher than directly applying other kind of events.
-    if (this.config.useVirtualDom && !this.usingVirtualDom && isSync) {
+    if (
+      this.config.useVirtualDom &&
+      !this.usingVirtualDom &&
+      isSync &&
+      /*
+        exclude virtualDom during pendingFullSnapshotRender as:
+        - `buildFromDOM` would incorrectly fork from an old contentDocument
+        - less need for virtualdom as we can apply mutations to a detached tree without triggering reflow
+       */
+      !this.pendingFullSnapshotRender
+    ) {
       this.usingVirtualDom = true;
       buildFromDom(this.iframe.contentDocument!, this.mirror, this.virtualDom);
       // If these legacy missing nodes haven't been resolved, they should be converted to virtual nodes.
@@ -1511,13 +1622,8 @@ export class Replayer {
            * https://github.com/rrweb-io/rrweb/pull/887
            * Remove any virtual style rules for stylesheets if a child text node is removed.
            */
-          if (
-            this.usingVirtualDom &&
-            target.nodeName === '#text' &&
-            parent.nodeName === 'STYLE' &&
-            (parent as RRStyleElement).rules?.length > 0
-          )
-            (parent as RRStyleElement).rules = [];
+          if (target.nodeName === '#text' && parent.nodeName === 'STYLE')
+            this.dropQueuedStyleRules(parent);
         } catch (error) {
           if (error instanceof DOMException) {
             this.warn(
@@ -1731,14 +1837,8 @@ export class Replayer {
        * https://github.com/rrweb-io/rrweb/pull/887
        * Remove any virtual style rules for stylesheets if a new text node is appended.
        */
-      if (
-        this.usingVirtualDom &&
-        target.nodeName === '#text' &&
-        parent.nodeName === 'STYLE' &&
-        (parent as RRStyleElement).rules?.length > 0
-      )
-        (parent as RRStyleElement).rules = [];
-
+      if (target.nodeName === '#text' && parent.nodeName === 'STYLE')
+        this.dropQueuedStyleRules(parent);
       if (isSerializedIframe(target, this.mirror)) {
         const targetId = this.mirror.getId(target as HTMLIFrameElement);
         const mutationInQueue = this.newDocumentQueue.find(
@@ -1822,10 +1922,8 @@ export class Replayer {
        * https://github.com/rrweb-io/rrweb/pull/865
        * Remove any virtual style rules for stylesheets whose contents are replaced.
        */
-      if (this.usingVirtualDom) {
-        const parent = target.parentNode as RRStyleElement;
-        if (parent?.rules?.length > 0) parent.rules = [];
-      }
+      const parent = target.parentNode as Node | null;
+      if (parent?.nodeName === 'STYLE') this.dropQueuedStyleRules(parent);
     });
     d.attributes.forEach((mutation) => {
       const target = mirror.getNode(mutation.id);
@@ -2154,6 +2252,36 @@ export class Replayer {
       if (rule?.style) {
         rule.style.removeProperty(data.remove.property);
       }
+    }
+  }
+
+  // after a virtual dom fast-forward or a deferred full snapshot attach
+  private applyQueuedStyleSheets() {
+    this.constructedStyleMutations.forEach((data) => {
+      this.applyStyleSheetMutation(data);
+    });
+    this.constructedStyleMutations = [];
+
+    this.adoptedStyleSheets.forEach((data) => {
+      this.applyAdoptedStyleSheet(data);
+    });
+    this.adoptedStyleSheets = [];
+  }
+
+  /**
+   * In the DOM, a <style>'s text content being replaced discards its stylesheet's rules
+   */
+  private dropQueuedStyleRules(styleEl: Node | RRNode) {
+    if (this.usingVirtualDom) {
+      if ((styleEl as RRStyleElement).rules?.length > 0)
+        (styleEl as RRStyleElement).rules = [];
+    } else if (this.pendingFullSnapshotRender) {
+      // deferred attach holds all pending rules in a single structure
+      const styleId = this.mirror.getId(styleEl as Node);
+      if (styleId < 0) return;
+      this.constructedStyleMutations = this.constructedStyleMutations.filter(
+        (m) => m.id !== styleId,
+      );
     }
   }
 

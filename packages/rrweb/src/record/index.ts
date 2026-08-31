@@ -30,7 +30,6 @@ import {
   type adoptedStyleSheetAssetParam,
   type assetParam,
   type asset,
-  type assetStatus,
   type fullSnapshotEvent,
   type fullSnapshotEventWithTime,
   type assetEventWithTime,
@@ -404,7 +403,7 @@ function record<T = eventWithTime>(
 
     shadowDomManager.init();
 
-    const capturedAssetStatuses: assetStatus[] = [];
+    let maxAssetDelay = 0;
 
     mutationBuffers.forEach((buf) => buf.lock()); // don't allow any mirror modifications during snapshotting
     const node = snapshot(document, {
@@ -447,10 +446,14 @@ function record<T = eventWithTime>(
         );
         if (Array.isArray(assetStatus)) {
           // removeme when we just capture one asset from srcset
-          capturedAssetStatuses.push(...assetStatus);
-        } else {
-          capturedAssetStatuses.push(assetStatus);
+          // srcset: we're not expecting a timeout (no requestIdleCallback), and don't want to do `data:` related substitution in the caller
+          return;
         }
+        if (assetStatus.timeout) {
+          maxAssetDelay = Math.max(maxAssetDelay, assetStatus.timeout);
+        }
+        // calling code needs to inline the new 'virtual' url to replace the full `data:` string
+        return assetStatus.url;
       },
       keepIframeSrcFn,
     });
@@ -462,8 +465,8 @@ function record<T = eventWithTime>(
       node,
       initialOffset: getWindowScroll(window),
     };
-    if (capturedAssetStatuses.length) {
-      data['capturedAssetStatuses'] = capturedAssetStatuses;
+    if (maxAssetDelay) {
+      data.maxAssetDelay = maxAssetDelay;
     }
     const now = nowTimestamp();
     assetManager.lastFullSnapshotTimestamp = now;

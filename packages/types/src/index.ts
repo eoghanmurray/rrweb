@@ -34,13 +34,12 @@ export type fullSnapshotEvent = {
       left: number;
     };
     /*
-     * the assets associated with this snapshot
-     * info is used to delay first FullSnapshot render until e.g. stylesheet
-     * assets have been received by the replayer
-     * could also be useful for server-side processing of the event stream
-     * without having to delve into the structure of this full snapshot
+     * the maximum number of milliseconds the recorder may take to emit the
+     * stylesheet assets referenced by this snapshot (they normally arrive much
+     * sooner); a replayer can delay revealing the snapshot by up to this long
+     * while waiting for them, avoiding a flash of unstyled content
      */
-    capturedAssetStatuses?: assetStatus[];
+    maxAssetDelay?: number;
   };
 };
 
@@ -128,6 +127,14 @@ export type captureAssetsParam = Partial<{
    * duplicated) content to be de-duplicated out of band.
    */
   adoptedStylesheetAssets: boolean;
+  /*
+   * default 200 (characters)
+   * data: urls shorter than this are kept inline in the snapshot rather than
+   * being emitted as a separate Asset event (referenced by a virtual url).
+   * Short data: urls are cheaper inline than as a whole asset event. Set to 0
+   * to emit every data: url as an asset (e.g. to keep test fixtures small).
+   */
+  dataURLAssetThreshold: number;
   /**
    * In a mutation context, we are already deferred, so performance related capturing can happen immediately (without a separate asset event)
    */
@@ -1050,6 +1057,11 @@ export type serializedNodeWithId = serializedNode & { id: number };
 export type serializedElementNodeWithId = Extract<
   serializedNodeWithId,
   Record<'type', NodeType.Element>
+>;
+
+export type serializedDocumentNodeWithId = Extract<
+  serializedNodeWithId,
+  Record<'type', NodeType.Document>
 >;
 
 export interface IMirror<TNode> {
