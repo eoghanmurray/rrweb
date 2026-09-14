@@ -194,13 +194,22 @@ export default class MutationBuffer {
     let nextSibling: Node | null = null;
     let ancestorBad = false;
     const missingParents = new Set<Node>();
-    while (this.addedSet.size) {
+    const addedNodes = this.addedSet.values();
+    let candidate = addedNodes.next();
+    while (!candidate.done) {
+      // Traversal may serialize a parent or sibling before this candidate.
+      // Keep it until removed, and reuse the iterator instead of rescanning
+      // deleted entries from the start of the set for each new parent.
+      if (!this.addedSet.has(candidate.value)) {
+        candidate = addedNodes.next();
+        continue;
+      }
       if (n !== null && this.addedSet.has(n.previousSibling as Node)) {
         // reuse parentNode, parentId, ancestorBad
         nextSibling = n; // n is a good next sibling
         n = n.previousSibling as Node;
       } else {
-        n = this.addedSet.values().next().value as Node; // pop
+        n = candidate.value;
 
         // eslint-disable-next-line no-constant-condition
         while (true) {
