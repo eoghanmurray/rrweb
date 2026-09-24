@@ -55,7 +55,7 @@ import { callbackWrapper } from './error-handler';
 import dom, { mutationObserverCtor } from '@rrweb/utils';
 
 export const mutationBuffers: MutationBuffer[] = [];
-export let ongoingMove: ((now?: number) => void) | null = null;
+export let ongoingMove: ((now?: number, reset?: boolean) => void) | null = null;
 
 // Event.path is non-standard and used in some older browsers
 type NonStandardEvent = Omit<Event, 'composedPath'> & {
@@ -130,23 +130,24 @@ function initMoveObserver({
     | IncrementalSource.TouchMove
     | IncrementalSource.Drag;
 
-  function moveEmission(now: number) {
-    if (!positions.length) {
-      // already emitted
-      return;
+  function moveEmission(now: number, reset = false) {
+    if (positions.length) {
+      ongoingMove = null;
+      const totalOffset = now - timeBaseline!;
+      mousemoveCb(
+        positions.map((p) => {
+          p.timeOffset -= totalOffset;
+          return p;
+        }),
+        source,
+        now,
+      );
+      positions = [];
+      timeBaseline = null;
     }
-    ongoingMove = null;
-    const totalOffset = now - timeBaseline!;
-    mousemoveCb(
-      positions.map((p) => {
-        p.timeOffset -= totalOffset;
-        return p;
-      }),
-      source,
-      now,
-    );
-    positions = [];
-    timeBaseline = null;
+    if (reset) {
+      throttledMoveEmission.cancel();
+    }
   }
 
   const throttledMoveEmission = throttle(

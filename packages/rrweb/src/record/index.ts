@@ -652,6 +652,7 @@ record.addCustomEvent = <T>(tag: string, payload: T) => {
 };
 
 record.freezePage = () => {
+  if (ongoingMove) ongoingMove(nowTimestamp(), true);
   mutationBuffers.forEach((buf) => buf.freeze());
 };
 
